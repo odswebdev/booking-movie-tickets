@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# Runtime data (JSON datastore)
+server/data/
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp

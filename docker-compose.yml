@@ -1,0 +1,80 @@
+name: cinetickets
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: cinetickets
+      POSTGRES_PASSWORD: cinetickets
+      POSTGRES_DB: cinetickets
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cinetickets -d cinetickets"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: ./server/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      HOST: 0.0.0.0
+      DATABASE_URL: postgresql://cinetickets:cinetickets@postgres:5432/cinetickets
+      REDIS_URL: redis://redis:6379
+      SERVE_CLIENT: "true"
+      CORS_ORIGIN: "*"
+      JWT_SECRET: ${JWT_SECRET:?Copy .env.example to .env and set JWT_SECRET}
+    ports:
+      - "4000:4000"
+    volumes:
+      - apidata:/app/server/data
+
+  worker:
+    build:
+      context: .
+      dockerfile: ./server/Dockerfile
+    restart: unless-stopped
+    command: ["node", "dist/server/src/worker.js"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://cinetickets:cinetickets@postgres:5432/cinetickets
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:?Copy .env.example to .env and set JWT_SECRET}
+      # Email for tickets/receipts (see server/.env.example). Default is mock,
+      # which the worker refuses in production — set a real provider to go live.
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-mock}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
+
+volumes:
+  pgdata:
+  redisdata:
+  apidata:

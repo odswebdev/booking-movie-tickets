@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Redirecting…</title>
+    <script>
+      // Single-page-app fallback for static hosts (GitHub Pages).
+      // %BASE% is replaced with Vite's `base` at build time.
+      (function () {
+        try {
+          sessionStorage.setItem(
+            "spa:redirect",
+            location.pathname + location.search + location.hash,
+          );
+        } catch (error) {
+          /* ignore */
+        }
+        location.replace("%BASE%");
+      })();
+    </script>
+  </head>
+  <body>
+    <p>Redirecting…</p>
+  </body>
+</html>

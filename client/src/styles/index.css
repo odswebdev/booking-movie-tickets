@@ -1,0 +1,190 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink-950: #05070a;
+  --color-ink-900: #07090b;
+  --color-ink-850: #0b0e12;
+  --color-ink-800: #10141a;
+  --color-ink-700: #171d25;
+  --color-ink-600: #232c37;
+
+  --color-brand-300: #7cf7bb;
+  --color-brand-400: #45ef9f;
+  --color-brand-500: #1de782;
+  --color-brand-600: #12c069;
+  --color-brand-700: #0d9451;
+
+  --color-danger: #ef4444;
+  --color-warning: #f59e0b;
+
+  --font-sans:
+    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  --radius-ticket: 1.25rem;
+
+  --animate-fade-in: fade-in 0.35s ease-out both;
+  --animate-rise: rise 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-pulse-soft: pulse-soft 2.4s ease-in-out infinite;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-ink-900 font-sans text-white antialiased;
+    min-height: 100dvh;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+  }
+
+  /* Keep number inputs (OTP, card fields) free of spinners. */
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
+
+@layer components {
+  /* Ambient background glows used by the app shell. */
+  .glow-bottom-left {
+    @apply pointer-events-none absolute rounded-full bg-brand-700/40 blur-[120px];
+    left: -30%;
+    bottom: -30%;
+    width: 60vw;
+    height: 60vw;
+  }
+
+  .glow-top-right {
+    @apply pointer-events-none absolute rounded-full bg-brand-700/30 blur-[100px];
+    right: -20%;
+    top: -20%;
+    width: 50vw;
+    height: 50vw;
+  }
+
+  .skeleton {
+    @apply animate-shimmer rounded-lg bg-ink-700;
+    background-image: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.03) 25%,
+      rgba(255, 255, 255, 0.09) 37%,
+      rgba(255, 255, 255, 0.03) 63%
+    );
+    background-size: 200% 100%;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Print styles so "Download ticket" produces a clean PDF via the print dialog. */
+@media print {
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-area {
+    position: static !important;
+  }
+}
+
+/* Leaflet cinema pins (DivIcon — no image assets, theme-matched). */
+.cinema-pin {
+  background: transparent;
+  border: none;
+  /* The icon box is the 28px touch target; the dot is centered inside it. */
+  display: grid;
+  place-items: center;
+}
+.cinema-pin-dot {
+  display: block;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background: #1de782;
+  border: 3px solid #0b1510;
+  box-shadow:
+    0 0 0 2px rgba(29, 231, 130, 0.45),
+    0 4px 10px rgba(0, 0, 0, 0.5);
+}

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#07090B" />
+    <meta
+      name="description"
+      content="Book cinema tickets online: pick a movie, cinema, showtime and seat, pay securely and keep every ticket in one place."
+    />
+    <title>CineTickets — Book movie tickets online</title>
+    <script>
+      // GitHub Pages serves 404.html for unknown deep links; it stores the
+      // requested path in sessionStorage and this script restores it so
+      // client-side routing can take over.
+      (function () {
+        try {
+          var redirect = sessionStorage.getItem("spa:redirect");
+          if (redirect && redirect !== location.href) {
+            sessionStorage.removeItem("spa:redirect");
+            history.replaceState(null, "", redirect);
+          }
+        } catch (error) {
+          /* sessionStorage may be blocked — deep links simply open the home page. */
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      <div style="padding: 2rem; font-family: system-ui, sans-serif; color: #fff">
+        <h1>JavaScript is required</h1>
+        <p>Please enable JavaScript to browse showtimes and book tickets.</p>
+      </div>
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

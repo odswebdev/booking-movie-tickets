@@ -1,0 +1,142 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# A new push to the same branch cancels the previous, slower run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "20"
+
+jobs:
+  quality:
+    name: Lint, typecheck and test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install workspace dependencies
+        run: npm ci
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Typecheck (server + client + shared)
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test (server)
+        run: npm run test --workspace @movie-tickets/server
+
+      - name: Test (client)
+        run: npm run test --workspace @movie-tickets/client
+
+      - name: Build client
+        run: npm run build --workspace @movie-tickets/client
+        env:
+          # Build a root-relative bundle in CI; GitHub Pages sets its own.
+          VITE_BASE: /
+
+      - name: Upload client build
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-dist
+          path: client/dist
+          retention-days: 7
+
+  integration:
+    name: Postgres + Redis integration tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: cinetickets
+          POSTGRES_PASSWORD: cinetickets
+          POSTGRES_DB: cinetickets_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U cinetickets -d cinetickets_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install workspace dependencies
+        run: npm ci
+
+      - name: Apply database migrations
+        run: npm run prisma:migrate --workspace @movie-tickets/server
+        env:
+          DATABASE_URL: postgresql://cinetickets:cinetickets@localhost:5432/cinetickets_test
+
+      - name: Test (server, Postgres + Redis)
+        run: npm run test:pg --workspace @movie-tickets/server
+
+  e2e:
+    name: E2E (Playwright, Chromium)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install workspace dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+        working-directory: client
+
+      - name: Test (E2E purchase + SMS flows)
+        run: npm run test:e2e --workspace @movie-tickets/client
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            client/playwright-report
+            client/test-results
+          retention-days: 7

@@ -1,0 +1,352 @@
+// CineTicket transactional datastore (PostgreSQL).
+//
+// The catalog (movies / theaters / showtimes / hall layouts) is generated and
+// stays in memory — see services/catalog.ts. Everything transactional
+// (accounts, sessions, bookings, payments, OTP codes, webhook idempotency)
+// lives here.
+//
+// Status columns are plain strings on purpose: shared/types.ts stays the
+// single source of truth and the TS mappers validate values on read.
+
+generator client {
+  provider = "prisma-client-js"
+  // Kept inside the workspace so typecheck works without a postinstall step.
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String             @id
+  name            String
+  email           String             @unique
+  passwordHash    String
+  /// E.164 number, verified through a `phone_verify` OTP.
+  phone           String?            @unique
+  phoneVerifiedAt DateTime?
+  /// Guest checkouts create a claimable account without a password.
+  isGuest         Boolean            @default(false)
+  /// Public code friends can enter at sign-up (loyalty referrals).
+  referralCode    String?            @unique
+  createdAt       DateTime           @default(now())
+  sessions        Session[]
+  bookings        Booking[]
+  bonus           BonusTransaction[]
+  reviews         Review[]
+  referralsMade   Referral[]         @relation("Referrer")
+  referralSource  Referral?          @relation("Referred")
+
+  @@map("users")
+}
+
+model Session {
+  id         String    @id
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  replacedBy String?
+  createdAt  DateTime  @default(now())
+  userAgent  String?
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model Booking {
+  id          String    @id
+  code        String    @unique
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  showtimeId  String
+  status      String
+  currency    String
+  seats       Json
+  quote       Json
+  snapshot    Json
+  phone       String?
+  payment     Json?
+  timeZone    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  expiresAt   DateTime
+  cancelledAt DateTime?
+  payments    Payment[]
+  tickets     Ticket[]
+  refunds     Refund[]
+
+  @@index([userId])
+  @@index([showtimeId, status])
+  @@map("bookings")
+}
+
+model Payment {
+  id            String   @id
+  bookingId     String
+  booking       Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  method        String
+  status        String
+  amountCents   Int
+  currency      String
+  provider      String
+  providerRef   String?  @unique
+  actionUrl     String?
+  cardBrand     String?
+  cardLast4     String?
+  phone         String
+  attemptsLeft  Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  expiresAt     DateTime
+  failureReason String?
+
+  @@index([bookingId])
+  @@map("payments")
+}
+
+model OtpCode {
+  id           String    @id
+  userId       String?
+  phone        String
+  purpose      String
+  key          String
+  codeHash     String
+  expiresAt    DateTime
+  attemptsLeft Int
+  consumedAt   DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([phone, purpose])
+  @@index([purpose, key])
+  @@map("otp_codes")
+}
+
+model WebhookEvent {
+  id        String   @id
+  provider  String
+  eventId   String
+  status    String
+  createdAt DateTime @default(now())
+
+  @@unique([provider, eventId])
+  @@map("webhook_events")
+}
+
+model City {
+  id          String   @id
+  slug        String   @unique
+  countryCode String
+  currency    String
+  nameRu      String
+  nameEn      String
+  lat         Float
+  lng         Float
+  cinemas     Cinema[]
+
+  @@map("cities")
+}
+
+model Cinema {
+  id        String @id
+  slug      String @unique
+  cityId    String
+  city      City   @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  nameRu    String
+  nameEn    String
+  addressRu String
+  addressEn String
+  lat       Float
+  lng       Float
+  locale    String
+  halls     Hall[]
+
+  @@index([cityId])
+  @@map("cinemas")
+}
+
+model Hall {
+  id           String      @id
+  cinemaId     String
+  cinema       Cinema      @relation(fields: [cinemaId], references: [id], onDelete: Cascade)
+  nameRu       String
+  nameEn       String
+  format       String
+  rows         Int
+  columns      Int
+  aislesAfter  Int[]
+  classesByRow Json
+  seats        Seat[]
+  screenings   Screening[]
+
+  @@index([cinemaId])
+  @@map("halls")
+}
+
+model Movie {
+  id              String      @id
+  slug            String      @unique
+  titleRu         String
+  titleEn         String
+  synopsisRu      String
+  synopsisEn      String
+  posterUrl       String
+  backdropUrl     String?
+  /// YouTube watch URL for the trailer modal (ТЗ §5).
+  trailerUrl      String?
+  durationMinutes Int
+  genresRu        String[]
+  genresEn        String[]
+  ageRating       String
+  releaseYear     Int
+  releaseDate     String?
+  voteAverage     Float?
+  isNew           Boolean     @default(false)
+  discountPercent Int         @default(0)
+  badges          String[]
+  source          String
+  screenings      Screening[]
+  reviews         Review[]
+
+  @@map("movies")
+}
+
+model Screening {
+  id             String   @id
+  movieId        String
+  movie          Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  hallId         String
+  hall           Hall     @relation(fields: [hallId], references: [id], onDelete: Cascade)
+  startsAt       DateTime
+  endsAt         DateTime
+  /// Cinema-local calendar day and time, denormalised for fast day queries.
+  date           String
+  time           String
+  timeZone       String
+  basePriceCents Int
+  currency       String
+
+  @@index([movieId, startsAt])
+  @@index([hallId, startsAt])
+  @@index([date])
+  @@map("screenings")
+}
+
+model Seat {
+  id              String @id
+  hallId          String
+  hall            Hall   @relation(fields: [hallId], references: [id], onDelete: Cascade)
+  row             String
+  number          Int
+  seatClass       String
+  priceDeltaCents Int    @default(0)
+
+  @@unique([hallId, row, number])
+  @@map("seats")
+}
+
+model Ticket {
+  id        String   @id
+  bookingId String
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  qrCode    String   @unique
+  seatLabel String
+  seatClass String
+  status    String   @default("valid")
+  issuedAt  DateTime @default(now())
+
+  @@index([bookingId])
+  @@map("tickets")
+}
+
+model Refund {
+  id          String   @id
+  bookingId   String
+  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  amountCents Int
+  currency    String
+  reason      String
+  provider    String?
+  createdAt   DateTime @default(now())
+
+  @@index([bookingId])
+  @@map("refunds")
+}
+
+model Promocode {
+  id          String    @id
+  code        String    @unique
+  percent     Int
+  description String
+  minSeats    Int       @default(1)
+  /// 0 = unlimited.
+  usageLimit  Int       @default(0)
+  used        Int       @default(0)
+  validFrom   DateTime?
+  validTo     DateTime?
+  active      Boolean   @default(true)
+
+  @@map("promocodes")
+}
+
+model BonusTransaction {
+  id        String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Positive = accrued, negative = spent.
+  delta     Int
+  reason    String
+  bookingId String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("bonus_transactions")
+}
+
+model Referral {
+  id           String   @id
+  referrerId   String
+  referrer     User     @relation("Referrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  referredId   String   @unique
+  referred     User     @relation("Referred", fields: [referredId], references: [id], onDelete: Cascade)
+  inviterBonus Int      @default(0)
+  welcomeBonus Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  @@index([referrerId])
+  @@map("referrals")
+}
+
+model Review {
+  id         String   @id
+  movieId    String
+  movie      Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Display name snapshot so an erased account leaves no PII behind.
+  authorName String
+  rating     Int
+  text       String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([movieId, userId])
+  @@index([movieId])
+  @@map("reviews")
+}
+
+model AuditLog {
+  id       String   @id
+  at       DateTime
+  userId   String?
+  action   String
+  entityId String?
+  meta     Json?
+
+  @@index([userId, at])
+  @@index([action, at])
+  @@map("audit_log")
+}
