@@ -1,5 +1,7 @@
 # CineTickets — online movie ticket booking
 
+[![CI](https://github.com/odswebdev/booking-movie-tickets/actions/workflows/ci.yml/badge.svg)](https://github.com/odswebdev/booking-movie-tickets/actions/workflows/ci.yml)
+
 A full-stack cinema ticketing platform: pick a **movie → cinema → date → time → seats**, hold seats with a
 countdown, pay by **Mir / Visa / Mastercard / UnionPay card** or **PayPal** with a **6-digit SMS confirmation
 code**, then get an e-ticket with a QR code and keep everything in your purchase history.

@@ -1,5 +1,7 @@
 # CineTickets — система бронирования билетов в кино
 
+[![CI](https://github.com/odswebdev/booking-movie-tickets/actions/workflows/ci.yml/badge.svg)](https://github.com/odswebdev/booking-movie-tickets/actions/workflows/ci.yml)
+
 Полноценный full-stack сервис покупки билетов в кино: выбор фильма → кинотеатра → даты → времени → мест,
 бронирование мест с таймером, оплата картой **Мир / Visa / Mastercard / UnionPay** или **PayPal**
 с подтверждением по **6-значному коду из SMS**, электронный билет с QR-кодом и история покупок.

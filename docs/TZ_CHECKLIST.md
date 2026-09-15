@@ -25,7 +25,7 @@
 - [x] 9a. i18n `ru/en`, `Intl`-даты/валюты — было изначально.
 - [x] 9b. URL-префиксы `/ru/ /en/` + `hreflang` — 2026-09-14 (п.9: `lib/localeRouting.ts` + `basename` роутера по локали, rewrite «голого» URL in-place при бутстрапе, `useSeo` держит canonical/hreflang/OG/JSON-LD на клиенте, серверные `alternates` + `x-default` в sitemap, переключатель языка сохраняет путь; E2E-хелперы переведены на locale-prefixed URL).
 - [x] 10a. Vitest unit + API-тесты (supertest) — было изначально, расширено 2026-09-14 (п.1–4: +race-hold; п.9: 166 API/unit-тестов сервера; 2026-09-15 `test:pg` прогнан локально против PostgreSQL 17 + Redis: миграции 0001–0005 применились, 168/168 passed — включая 2 BullMQ-теста и гонки hold'ов через Redis-локи).
-- [x] 10b. Playwright E2E + k6 load — 2026-09-14 (п.4: 2 спеки + booking-spike.js; п.9: +axe-спек — 3 спека, 4/4 зелёные).
+- [x] 10b. Playwright E2E + k6 load — 2026-09-14 (п.4: 2 спеки + booking-spike.js; п.9: +axe-спек — 3 спека, 4/4 зелёные); 2026-09-15: E2E-хелпер сделан TZ-робастным (первый ДОСТУПНЫЙ кинотеатр/день — вечерние UTC-прогоны CI натыкались на disabled-дни), в CI-джобе E2E закреплён TZ=UTC; GitHub Actions на odswebdev/booking-movie-tickets — 3/3 джобы зелёные (quality, E2E, PG+Redis integration).
 
 ## 2. Схема БД (Prisma)
 
