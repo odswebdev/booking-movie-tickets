@@ -33,3 +33,5 @@ npm-debug.log*
 .vscode/*
 !.vscode/extensions.json
 *.swp
+.vercel
+.env*

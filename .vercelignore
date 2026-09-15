@@ -1,0 +1,8 @@
+docs
+k6
+e2e-payment.mjs
+client/test-results
+client/playwright-report
+server/data
+server.log
+*.zip
