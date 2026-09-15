@@ -7,6 +7,9 @@ code**, then get an e-ticket with a QR code and keep everything in your purchase
 The UI is **bilingual (EN/RU)**: English shows prices in **USD** and New York cinemas, Russian shows **RUB**
 and Moscow cinemas. Switch languages from the globe menu in the header.
 
+> **Live demo (Vercel):** https://booking-movie-tickets-beta.vercel.app — demo mode: mock payments, the SMS
+> code is shown right on the page (`devCode`), state resets when the serverless instance goes cold.
+>
 > Русская версия: [README.md](./README.md)
 
 ---
