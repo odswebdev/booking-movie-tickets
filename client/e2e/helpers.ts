@@ -17,8 +17,10 @@ export async function openFirstShowtimeSeats(page: Page): Promise<void> {
   // Routes live under a locale prefix (/en, /ru) — match the suffix, not the root.
   await page.locator('a[href*="/movies/"]').first().click();
   await page.waitForURL(/\/movies\//);
-  await page.locator('section[aria-labelledby="cinema-heading"] button').first().click();
-  await page.locator('section[aria-labelledby="date-heading"] button').first().click();
+  // Days/cinemas whose showtimes are all in the past render disabled (CI runs
+  // at any UTC hour) — always pick the first ENABLED option, like times do.
+  await page.locator('section[aria-labelledby="cinema-heading"] button:not([disabled])').first().click();
+  await page.locator('section[aria-labelledby="date-heading"] button:not([disabled])').first().click();
   await page.locator('section[aria-labelledby="time-heading"] button:not([disabled])').first().click();
   await page.getByRole("button", { name: "Select seats" }).click();
   await page.waitForURL(/\/showtimes\/.+\/seats/);

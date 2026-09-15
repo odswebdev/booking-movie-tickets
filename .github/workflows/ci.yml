@@ -129,6 +129,11 @@ jobs:
         working-directory: client
 
       - name: Test (E2E purchase + SMS flows)
+        # TZ is pinned so the run does not depend on the wall-clock hour: past
+        # showtimes render their day disabled, and the helpers must cope at 23:50
+        # UTC exactly as they do at 09:00.
+        env:
+          TZ: UTC
         run: npm run test:e2e --workspace @movie-tickets/client
 
       - name: Upload Playwright report
