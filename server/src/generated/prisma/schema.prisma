@@ -9,9 +9,11 @@
 // single source of truth and the TS mappers validate values on read.
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   // Kept inside the workspace so typecheck works without a postinstall step.
-  output   = "../src/generated/prisma"
+  output        = "../src/generated/prisma"
+  // native = local/CI (debian); rhel = Vercel Amazon Linux 2023.
+  binaryTargets = ["native", "debian-openssl-3.0.x", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
