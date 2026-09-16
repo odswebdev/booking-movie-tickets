@@ -3,6 +3,12 @@
   "buildCommand": "npm run build -w @movie-tickets/server && cd client && VITE_BASE=/ npm run build",
   "outputDirectory": "client/dist",
   "installCommand": "npm install",
+  "functions": {
+    "api/index.js": {
+      "includeFiles": "server/dist/server/src/generated/**",
+      "maxDuration": 30
+    }
+  },
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api" },
     { "source": "/sitemap.xml", "destination": "/api" },

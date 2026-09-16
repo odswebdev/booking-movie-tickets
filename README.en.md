@@ -10,7 +10,8 @@ The UI is **bilingual (EN/RU)**: English shows prices in **USD** and New York ci
 and Moscow cinemas. Switch languages from the globe menu in the header.
 
 > **Live demo (Vercel):** https://booking-movie-tickets-beta.vercel.app — demo mode: mock payments, the SMS
-> code is shown right on the page (`devCode`), state resets when the serverless instance goes cold.
+> code is shown right on the page (`devCode`). Accounts, bookings and tickets persist in Neon Postgres;
+> seat holds live in Upstash Redis (survive serverless cold starts).
 >
 > Русская версия: [README.md](./README.md)
 

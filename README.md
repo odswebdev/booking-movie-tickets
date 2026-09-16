@@ -10,7 +10,8 @@
 английская — в **долларах** и кинотеатры Нью-Йорка. Язык переключается в шапке (кнопка с глобусом).
 
 > **Живое демо (Vercel):** https://booking-movie-tickets-beta.vercel.app — demo-режим: mock-оплата,
-> SMS-код показывается прямо на странице (`devCode`), состояние сбрасывается при остывании serverless-инстанса.
+> SMS-код показывается прямо на странице (`devCode`). Аккаунты, брони и билеты живут в Neon Postgres,
+> холды мест — в Upstash Redis (состояние переживает cold start).
 >
 > English version: [README.en.md](./README.en.md)
 
